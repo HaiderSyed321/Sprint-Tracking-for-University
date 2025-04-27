@@ -1,90 +1,29 @@
 
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { Task, TaskStatus } from "@/types/task";
+import { saveToDatabase, loadFromDatabase, handleTaskOperation } from "@/services/taskService";
 
-export type TaskStatus = "backlog" | "todo" | "inProgress" | "completed";
-
-export type TaskPriority = "low" | "medium" | "high";
-
-// Add a type for task tags to support Jira-like labels
-export type TaskTag = {
-  id: string;
-  name: string;
-  color: string;
-};
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
+export type TaskFilters = {
+  priority: string;
+  searchTerm: string;
   dueDate: string;
-  priority: TaskPriority;
-  storyPoints: number;
-  status: TaskStatus;
-  tags?: TaskTag[]; // Optional array of tags
-}
-
-// This would be replaced with real Supabase integration
-const mockSaveToDatabase = async (tasks: Task[]): Promise<boolean> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      localStorage.setItem("sprintTasks", JSON.stringify(tasks));
-      resolve(true);
-    }, 500);
-  });
 };
-
-// This would be replaced with real Supabase loading
-const mockLoadFromDatabase = async (): Promise<Task[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const stored = localStorage.getItem("sprintTasks");
-      resolve(stored ? JSON.parse(stored) : []);
-    }, 500);
-  });
-};
-
-// Predefined tag colors for Jira-like experience
-export const TASK_TAG_COLORS = {
-  blue: "#1EAEDB",
-  green: "#5CB85C",
-  red: "#ea384c",
-  yellow: "#F0AD4E",
-  orange: "#F97316",
-  purple: "#9b87f5",
-  teal: "#20C997",
-};
-
-// Predefined tags that users can select from
-export const PREDEFINED_TAGS: TaskTag[] = [
-  { id: "frontend", name: "Frontend", color: TASK_TAG_COLORS.blue },
-  { id: "backend", name: "Backend", color: TASK_TAG_COLORS.green },
-  { id: "bug", name: "Bug", color: TASK_TAG_COLORS.red },
-  { id: "feature", name: "Feature", color: TASK_TAG_COLORS.purple },
-  { id: "documentation", name: "Documentation", color: TASK_TAG_COLORS.yellow },
-  { id: "design", name: "Design", color: TASK_TAG_COLORS.teal },
-  { id: "testing", name: "Testing", color: TASK_TAG_COLORS.orange },
-];
 
 export const useTaskManager = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    priority: "" as TaskPriority | "",
+  const [filters, setFilters] = useState<TaskFilters>({
+    priority: "",
     searchTerm: "",
     dueDate: ""
   });
 
-  // Load tasks on mount
   useEffect(() => {
     const loadTasks = async () => {
       try {
         setIsLoading(true);
-        const loadedTasks = await mockLoadFromDatabase();
+        const loadedTasks = await loadFromDatabase();
         setTasks(loadedTasks);
-      } catch (error) {
-        console.error("Error loading tasks:", error);
-        toast.error("Failed to load tasks");
       } finally {
         setIsLoading(false);
       }
@@ -93,113 +32,88 @@ export const useTaskManager = () => {
     loadTasks();
   }, []);
 
-  // Save tasks when they change
   useEffect(() => {
     if (!isLoading) {
-      const saveTasks = async () => {
-        try {
-          await mockSaveToDatabase(tasks);
-        } catch (error) {
-          console.error("Error saving tasks:", error);
-          toast.error("Failed to save tasks");
-        }
-      };
-      
-      saveTasks();
+      saveToDatabase(tasks);
     }
   }, [tasks, isLoading]);
 
   const addTask = async (task: Omit<Task, "id">) => {
-    try {
-      const newTask: Task = {
-        ...task,
-        id: crypto.randomUUID()
-      };
-      
-      const updatedTasks = [...tasks, newTask];
-      setTasks(updatedTasks);
-      await mockSaveToDatabase(updatedTasks);
-      toast.success("Task created successfully");
-      return true;
-    } catch (error) {
-      console.error("Error adding task:", error);
-      toast.error("Failed to create task");
-      return false;
-    }
+    const newTask: Task = {
+      ...task,
+      id: crypto.randomUUID()
+    };
+    
+    return handleTaskOperation(
+      async () => {
+        const updatedTasks = [...tasks, newTask];
+        setTasks(updatedTasks);
+        await saveToDatabase(updatedTasks);
+        return true;
+      },
+      "Task created successfully",
+      "Failed to create task"
+    );
   };
 
   const updateTask = async (updatedTask: Task) => {
-    try {
-      const updatedTasks = tasks.map((task) => 
-        task.id === updatedTask.id ? updatedTask : task
-      );
-      
-      setTasks(updatedTasks);
-      await mockSaveToDatabase(updatedTasks);
-      toast.success("Task updated successfully");
-      return true;
-    } catch (error) {
-      console.error("Error updating task:", error);
-      toast.error("Failed to update task");
-      return false;
-    }
+    return handleTaskOperation(
+      async () => {
+        const updatedTasks = tasks.map((task) => 
+          task.id === updatedTask.id ? updatedTask : task
+        );
+        setTasks(updatedTasks);
+        await saveToDatabase(updatedTasks);
+        return true;
+      },
+      "Task updated successfully",
+      "Failed to update task"
+    );
   };
 
   const deleteTask = async (taskId: string) => {
-    try {
-      const updatedTasks = tasks.filter((task) => task.id !== taskId);
-      setTasks(updatedTasks);
-      await mockSaveToDatabase(updatedTasks);
-      toast.success("Task deleted successfully");
-      return true;
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      toast.error("Failed to delete task");
-      return false;
-    }
+    return handleTaskOperation(
+      async () => {
+        const updatedTasks = tasks.filter((task) => task.id !== taskId);
+        setTasks(updatedTasks);
+        await saveToDatabase(updatedTasks);
+        return true;
+      },
+      "Task deleted successfully",
+      "Failed to delete task"
+    );
   };
 
   const moveTask = async (taskId: string, newStatus: TaskStatus) => {
-    try {
-      const taskToMove = tasks.find((t) => t.id === taskId);
-      if (!taskToMove) return false;
+    return handleTaskOperation(
+      async () => {
+        const taskToMove = tasks.find((t) => t.id === taskId);
+        if (!taskToMove) return false;
 
-      const updatedTask = { ...taskToMove, status: newStatus };
-      const updatedTasks = tasks.map((task) => 
-        task.id === taskId ? updatedTask : task
-      );
-      
-      setTasks(updatedTasks);
-      await mockSaveToDatabase(updatedTasks);
-      
-      // Show a success message when moving to completed
-      if (newStatus === "completed") {
-        toast.success("Task completed! 🎉");
-      } else {
-        toast.success("Task moved successfully");
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Error moving task:", error);
-      toast.error("Failed to move task");
-      return false;
-    }
+        const updatedTask = { ...taskToMove, status: newStatus };
+        const updatedTasks = tasks.map((task) => 
+          task.id === taskId ? updatedTask : task
+        );
+        
+        setTasks(updatedTasks);
+        await saveToDatabase(updatedTasks);
+        return true;
+      },
+      newStatus === "completed" ? "Task completed! 🎉" : "Task moved successfully",
+      "Failed to move task"
+    );
   };
 
   const getFilteredTasks = () => {
     return tasks.filter(task => {
-      // Filter by priority if set
       if (filters.priority && task.priority !== filters.priority) {
         return false;
       }
       
-      // Filter by due date if set
       if (filters.dueDate && task.dueDate !== filters.dueDate) {
         return false;
       }
       
-      // Filter by search term
       if (filters.searchTerm && 
           !task.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) && 
           !task.description.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
@@ -210,10 +124,8 @@ export const useTaskManager = () => {
     });
   };
 
-  const filteredTasks = getFilteredTasks();
-
   const tasksByStatus = (status: TaskStatus) => {
-    return filteredTasks.filter(task => task.status === status);
+    return getFilteredTasks().filter(task => task.status === status);
   };
 
   const getTasksCompletionStats = () => {
@@ -234,7 +146,7 @@ export const useTaskManager = () => {
 
   return {
     isLoading,
-    tasks: filteredTasks,
+    tasks: getFilteredTasks(),
     tasksByStatus,
     filters,
     setFilters,
@@ -246,3 +158,7 @@ export const useTaskManager = () => {
     getTasksByPriority
   };
 };
+
+// Re-export types and constants for backward compatibility
+export * from "@/types/task";
+export * from "@/constants/taskConstants";
