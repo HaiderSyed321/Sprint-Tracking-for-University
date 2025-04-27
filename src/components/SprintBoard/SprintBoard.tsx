@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -100,8 +101,16 @@ export const SprintBoard = () => {
     moveTask(taskId, newStatus);
   };
 
-  const handleFilterChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
+  const handleFilterChange = (newFilters: {
+    priority: "all" | TaskPriority;
+    searchTerm: string;
+    dueDate: string;
+  }) => {
+    // Convert "all" to empty string for compatibility with useTaskManager
+    setFilters({
+      ...newFilters,
+      priority: newFilters.priority === "all" ? "" : newFilters.priority
+    });
   };
 
   const completionStats = getTasksCompletionStats();

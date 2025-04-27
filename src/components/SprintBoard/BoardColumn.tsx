@@ -2,6 +2,27 @@
 import { useDrop } from "react-dnd";
 import { TaskCard } from "./TaskCard";
 import { Task, TaskStatus } from "@/hooks/useTaskManager";
+import { 
+  Inbox, 
+  CheckCircle2, 
+  ListTodo, 
+  ActivitySquare 
+} from "lucide-react";
+
+const getColumnIcon = (status: TaskStatus) => {
+  switch (status) {
+    case "backlog":
+      return <Inbox className="w-4 h-4 text-gray-600" />;
+    case "todo":
+      return <ListTodo className="w-4 h-4 text-gray-600" />;
+    case "inProgress":
+      return <ActivitySquare className="w-4 h-4 text-gray-600" />;
+    case "completed":
+      return <CheckCircle2 className="w-4 h-4 text-gray-600" />;
+    default:
+      return null;
+  }
+};
 
 interface BoardColumnProps {
   title: string;
@@ -32,13 +53,18 @@ export const BoardColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-4 space-y-4 min-h-[500px] ${
-        isOver ? "bg-gray-100" : ""
+      className={`bg-gray-50 rounded-lg p-4 space-y-4 min-h-[500px] transition-colors duration-200 ${
+        isOver ? "bg-gray-100 border-2 border-classli-primary border-opacity-50" : ""
       }`}
     >
       <h2 className="font-medium text-gray-700 flex items-center justify-between">
-        {title}
-        <span className="text-sm bg-white px-2 py-1 rounded text-gray-600">
+        <div className="flex items-center gap-2">
+          {getColumnIcon(status)}
+          <span>{title}</span>
+        </div>
+        <span className={`text-sm bg-white px-2 py-1 rounded text-gray-600 transition-all duration-500 ${
+          tasks.length > 0 ? "animate-pulse" : ""
+        }`}>
           {tasks.length}
         </span>
       </h2>
