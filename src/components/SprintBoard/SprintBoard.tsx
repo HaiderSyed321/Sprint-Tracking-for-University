@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
-import { useTaskManager, Task, TaskStatus, TaskPriority } from "@/hooks/useTaskManager";
+import { useTaskManager, Task, TaskStatus, TaskPriority, PREDEFINED_TAGS } from "@/hooks/useTaskManager";
 import { TaskDialog, TaskFormValues } from "./TaskDialog";
 import { BoardColumn } from "./BoardColumn";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
@@ -57,7 +58,12 @@ export const SprintBoard = () => {
       dueDate: values.dueDate,
       priority: values.priority,
       storyPoints: values.storyPoints,
-      status: values.status
+      status: values.status,
+      // Add random tags to make it look more like Jira
+      tags: values.tags || [
+        // Add 1-2 random tags from predefined tags
+        ...PREDEFINED_TAGS.slice(0, Math.floor(Math.random() * 3))
+      ]
     };
     
     addTask(taskToAdd);
@@ -72,7 +78,8 @@ export const SprintBoard = () => {
         dueDate: values.dueDate,
         priority: values.priority,
         storyPoints: values.storyPoints,
-        status: values.status
+        status: values.status,
+        tags: values.tags || currentTask.tags
       };
       
       updateTask(updatedTask);
@@ -83,6 +90,11 @@ export const SprintBoard = () => {
   const handleTaskClick = (task: Task) => {
     setCurrentTask(task);
     setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (task: Task) => {
+    setCurrentTask(task);
+    setDeleteDialogOpen(true);
   };
 
   const handleDeleteTask = () => {
@@ -158,6 +170,7 @@ export const SprintBoard = () => {
               status={column.id}
               tasks={tasksByStatus(column.id)}
               onTaskClick={handleTaskClick}
+              onDeleteClick={handleDeleteClick}
               onDropTask={handleDropTask}
             />
           ))}

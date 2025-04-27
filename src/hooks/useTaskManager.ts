@@ -6,6 +6,13 @@ export type TaskStatus = "backlog" | "todo" | "inProgress" | "completed";
 
 export type TaskPriority = "low" | "medium" | "high";
 
+// Add a type for task tags to support Jira-like labels
+export type TaskTag = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export interface Task {
   id: string;
   title: string;
@@ -14,6 +21,7 @@ export interface Task {
   priority: TaskPriority;
   storyPoints: number;
   status: TaskStatus;
+  tags?: TaskTag[]; // Optional array of tags
 }
 
 // This would be replaced with real Supabase integration
@@ -35,6 +43,28 @@ const mockLoadFromDatabase = async (): Promise<Task[]> => {
     }, 500);
   });
 };
+
+// Predefined tag colors for Jira-like experience
+export const TASK_TAG_COLORS = {
+  blue: "#1EAEDB",
+  green: "#5CB85C",
+  red: "#ea384c",
+  yellow: "#F0AD4E",
+  orange: "#F97316",
+  purple: "#9b87f5",
+  teal: "#20C997",
+};
+
+// Predefined tags that users can select from
+export const PREDEFINED_TAGS: TaskTag[] = [
+  { id: "frontend", name: "Frontend", color: TASK_TAG_COLORS.blue },
+  { id: "backend", name: "Backend", color: TASK_TAG_COLORS.green },
+  { id: "bug", name: "Bug", color: TASK_TAG_COLORS.red },
+  { id: "feature", name: "Feature", color: TASK_TAG_COLORS.purple },
+  { id: "documentation", name: "Documentation", color: TASK_TAG_COLORS.yellow },
+  { id: "design", name: "Design", color: TASK_TAG_COLORS.teal },
+  { id: "testing", name: "Testing", color: TASK_TAG_COLORS.orange },
+];
 
 export const useTaskManager = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -65,7 +95,7 @@ export const useTaskManager = () => {
 
   // Save tasks when they change
   useEffect(() => {
-    if (!isLoading && tasks.length > 0) {
+    if (!isLoading) {
       const saveTasks = async () => {
         try {
           await mockSaveToDatabase(tasks);
@@ -141,6 +171,14 @@ export const useTaskManager = () => {
       
       setTasks(updatedTasks);
       await mockSaveToDatabase(updatedTasks);
+      
+      // Show a success message when moving to completed
+      if (newStatus === "completed") {
+        toast.success("Task completed! 🎉");
+      } else {
+        toast.success("Task moved successfully");
+      }
+      
       return true;
     } catch (error) {
       console.error("Error moving task:", error);

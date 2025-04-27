@@ -29,6 +29,7 @@ interface BoardColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  onDeleteClick?: (task: Task) => void;
   onDropTask: (taskId: string, status: TaskStatus) => void;
 }
 
@@ -37,6 +38,7 @@ export const BoardColumn = ({
   status,
   tasks,
   onTaskClick,
+  onDeleteClick,
   onDropTask,
 }: BoardColumnProps) => {
   // Set up drop target
@@ -74,6 +76,7 @@ export const BoardColumn = ({
             key={task.id}
             {...task}
             onClick={() => onTaskClick(task)}
+            onDeleteClick={onDeleteClick ? () => onDeleteClick(task) : undefined}
           />
         ))}
         {tasks.length === 0 && (
