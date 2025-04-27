@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -53,15 +52,33 @@ export const SprintBoard = () => {
   const dndBackend = isTouchDevice ? TouchBackend : HTML5Backend;
 
   const handleCreateTask = (values: TaskFormValues) => {
-    addTask(values);
+    // Ensure all required fields are present before adding the task
+    const taskToAdd: Omit<Task, "id"> = {
+      title: values.title,
+      description: values.description || "",
+      dueDate: values.dueDate,
+      priority: values.priority,
+      storyPoints: values.storyPoints,
+      status: values.status
+    };
+    
+    addTask(taskToAdd);
   };
 
   const handleEditTask = (values: TaskFormValues) => {
     if (currentTask) {
-      updateTask({
-        ...values,
-        id: currentTask.id
-      });
+      // Ensure all required fields are present
+      const updatedTask: Task = {
+        id: currentTask.id,
+        title: values.title,
+        description: values.description || "",
+        dueDate: values.dueDate,
+        priority: values.priority,
+        storyPoints: values.storyPoints,
+        status: values.status
+      };
+      
+      updateTask(updatedTask);
     }
     setCurrentTask(null);
   };
