@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
-import { useTaskManager, Task, TaskStatus } from "@/hooks/useTaskManager";
+import { useTaskManager, Task, TaskStatus, TaskPriority } from "@/hooks/useTaskManager";
 import { TaskDialog, TaskFormValues } from "./TaskDialog";
 import { BoardColumn } from "./BoardColumn";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
@@ -48,12 +47,10 @@ export const SprintBoard = () => {
     getTasksByPriority
   } = useTaskManager();
   
-  // Use touch backend for mobile and HTML5 backend for desktop
   const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
   const dndBackend = isTouchDevice ? TouchBackend : HTML5Backend;
 
   const handleCreateTask = (values: TaskFormValues) => {
-    // Ensure all required fields are present before adding the task
     const taskToAdd: Omit<Task, "id"> = {
       title: values.title,
       description: values.description || "",
@@ -68,7 +65,6 @@ export const SprintBoard = () => {
 
   const handleEditTask = (values: TaskFormValues) => {
     if (currentTask) {
-      // Ensure all required fields are present
       const updatedTask: Task = {
         id: currentTask.id,
         title: values.title,
@@ -106,7 +102,6 @@ export const SprintBoard = () => {
     searchTerm: string;
     dueDate: string;
   }) => {
-    // Convert "all" to empty string for compatibility with useTaskManager
     setFilters({
       ...newFilters,
       priority: newFilters.priority === "all" ? "" : newFilters.priority
@@ -116,7 +111,6 @@ export const SprintBoard = () => {
   const completionStats = getTasksCompletionStats();
   const priorityStats = getTasksByPriority();
 
-  // Show a loading state if tasks are loading
   if (isLoading) {
     return (
       <div className="h-full p-6 flex items-center justify-center">
@@ -183,7 +177,6 @@ export const SprintBoard = () => {
           </div>
         )}
 
-        {/* Task Creation Dialog */}
         <TaskDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
@@ -191,7 +184,6 @@ export const SprintBoard = () => {
           mode="create"
         />
 
-        {/* Task Edit Dialog */}
         {currentTask && (
           <TaskDialog
             open={editDialogOpen}
@@ -202,7 +194,6 @@ export const SprintBoard = () => {
           />
         )}
 
-        {/* Task Delete Confirmation */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
