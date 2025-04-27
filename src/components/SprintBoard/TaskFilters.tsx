@@ -8,7 +8,7 @@ import { TaskPriority } from "@/hooks/useTaskManager";
 
 interface TaskFiltersProps {
   onFilterChange: (filters: {
-    priority: TaskPriority | "";
+    priority: TaskPriority | "all";
     searchTerm: string;
     dueDate: string;
   }) => void;
@@ -24,7 +24,7 @@ export const TaskFilters = ({
   currentFilters,
 }: TaskFiltersProps) => {
   const [searchTerm, setSearchTerm] = useState(currentFilters.searchTerm);
-  const [priority, setPriority] = useState<TaskPriority | "">(currentFilters.priority);
+  const [priority, setPriority] = useState<TaskPriority | "all">(currentFilters.priority === "" ? "all" : currentFilters.priority);
   const [dueDate, setDueDate] = useState(currentFilters.dueDate);
   
   const applyFilters = () => {
@@ -37,16 +37,16 @@ export const TaskFilters = ({
 
   const clearFilters = () => {
     setSearchTerm("");
-    setPriority("");
+    setPriority("all");
     setDueDate("");
     onFilterChange({
       searchTerm: "",
-      priority: "",
+      priority: "all",
       dueDate: "",
     });
   };
 
-  const hasActiveFilters = searchTerm || priority || dueDate;
+  const hasActiveFilters = searchTerm || priority !== "all" || dueDate;
 
   return (
     <div className="flex flex-col md:flex-row gap-3 mb-4">
@@ -68,13 +68,13 @@ export const TaskFilters = ({
       <div className="flex flex-col sm:flex-row gap-3">
         <Select 
           value={priority} 
-          onValueChange={(value) => setPriority(value as TaskPriority | "")}
+          onValueChange={(value) => setPriority(value as TaskPriority | "all")}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by priority" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All priorities</SelectItem>
+            <SelectItem value="all">All priorities</SelectItem>
             <SelectItem value="high">High</SelectItem>
             <SelectItem value="medium">Medium</SelectItem>
             <SelectItem value="low">Low</SelectItem>
