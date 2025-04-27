@@ -2,13 +2,10 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, BarChart } from "lucide-react";
+import { Task } from "@/hooks/useTaskManager";
+import { useDrag } from "react-dnd";
 
-interface TaskCardProps {
-  title: string;
-  description: string;
-  dueDate: string;
-  priority: "low" | "medium" | "high";
-  storyPoints: number;
+interface TaskCardProps extends Task {
   onClick: () => void;
 }
 
@@ -26,16 +23,36 @@ const getPriorityColor = (priority: string) => {
 };
 
 export const TaskCard = ({
+  id,
   title,
   description,
   dueDate,
   priority,
   storyPoints,
+  status,
   onClick,
 }: TaskCardProps) => {
+  // Set up dragging
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: "task",
+    item: { id, status },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  // Format the date for display
+  const formattedDate = new Date(dueDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric"
+  });
+
   return (
     <Card
-      className="p-4 cursor-pointer hover:shadow-md transition-shadow bg-white"
+      ref={drag}
+      className={`p-4 cursor-pointer hover:shadow-md transition-shadow bg-white ${
+        isDragging ? "opacity-50" : "opacity-100"
+      }`}
       onClick={onClick}
     >
       <div className="space-y-2">
@@ -49,7 +66,7 @@ export const TaskCard = ({
         <div className="flex justify-between items-center text-sm text-gray-500">
           <div className="flex items-center gap-1">
             <CalendarIcon className="w-4 h-4" />
-            <span>{dueDate}</span>
+            <span>{formattedDate}</span>
           </div>
           <div className="flex items-center gap-1">
             <BarChart className="w-4 h-4" />

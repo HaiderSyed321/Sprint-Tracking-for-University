@@ -1,27 +1,25 @@
 
 import { useState } from "react";
-import { TaskCard } from "./TaskCard";
-
-const INITIAL_TASKS = [
-  {
-    id: "1",
-    title: "Research Project Introduction",
-    description: "Write the introduction section for the semester research project",
-    dueDate: "2025-05-01",
-    priority: "high",
-    storyPoints: 8,
-    status: "backlog"
-  },
-  {
-    id: "2",
-    title: "Math Assignment 3",
-    description: "Complete problems 1-10 from Chapter 4",
-    dueDate: "2025-04-30",
-    priority: "medium",
-    storyPoints: 5,
-    status: "todo"
-  }
-] as const;
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { TouchBackend } from "react-dnd-touch-backend";
+import { useTaskManager, Task, TaskStatus } from "@/hooks/useTaskManager";
+import { TaskDialog, TaskFormValues } from "./TaskDialog";
+import { BoardColumn } from "./BoardColumn";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
+import { TaskFilters } from "./TaskFilters";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const COLUMNS = [
   { id: "backlog", title: "Backlog" },
@@ -31,45 +29,174 @@ const COLUMNS = [
 ] as const;
 
 export const SprintBoard = () => {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  
+  const {
+    isLoading,
+    tasks,
+    tasksByStatus,
+    filters,
+    setFilters,
+    addTask,
+    updateTask,
+    deleteTask,
+    moveTask,
+    getTasksCompletionStats,
+    getTasksByPriority
+  } = useTaskManager();
+  
+  // Use touch backend for mobile and HTML5 backend for desktop
+  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+  const dndBackend = isTouchDevice ? TouchBackend : HTML5Backend;
+
+  const handleCreateTask = (values: TaskFormValues) => {
+    addTask(values);
+  };
+
+  const handleEditTask = (values: TaskFormValues) => {
+    if (currentTask) {
+      updateTask({
+        ...values,
+        id: currentTask.id
+      });
+    }
+    setCurrentTask(null);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setCurrentTask(task);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteTask = () => {
+    if (currentTask) {
+      deleteTask(currentTask.id);
+      setDeleteDialogOpen(false);
+      setCurrentTask(null);
+    }
+  };
+
+  const handleDropTask = (taskId: string, newStatus: TaskStatus) => {
+    moveTask(taskId, newStatus);
+  };
+
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  const completionStats = getTasksCompletionStats();
+  const priorityStats = getTasksByPriority();
+
+  // Show a loading state if tasks are loading
+  if (isLoading) {
+    return (
+      <div className="h-full p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-classli-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your sprint board...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Sprint Board</h1>
-        <p className="text-gray-600">Organize and track your semester tasks</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {COLUMNS.map((column) => (
-          <div
-            key={column.id}
-            className="bg-gray-50 rounded-lg p-4 space-y-4"
-          >
-            <h2 className="font-medium text-gray-700 flex items-center justify-between">
-              {column.title}
-              <span className="text-sm bg-white px-2 py-1 rounded text-gray-600">
-                {tasks.filter((task) => task.status === column.id).length}
-              </span>
-            </h2>
-            <div className="space-y-3">
-              {tasks
-                .filter((task) => task.status === column.id)
-                .map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    title={task.title}
-                    description={task.description}
-                    dueDate={task.dueDate}
-                    priority={task.priority}
-                    storyPoints={task.storyPoints}
-                    onClick={() => console.log("Open task details:", task.id)}
-                  />
-                ))}
+    <DndProvider backend={dndBackend}>
+      <div className="h-full p-6 space-y-6">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Sprint Board</h1>
+              <p className="text-gray-600">Organize and track your semester tasks</p>
             </div>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Task
+            </Button>
           </div>
-        ))}
+          
+          <AnalyticsDashboard
+            totalTasks={completionStats.total}
+            completedTasks={completionStats.completed}
+            completionPercentage={completionStats.percentage}
+            tasksByPriority={priorityStats}
+          />
+        </div>
+        
+        <TaskFilters 
+          onFilterChange={handleFilterChange} 
+          currentFilters={filters}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {COLUMNS.map((column) => (
+            <BoardColumn
+              key={column.id}
+              title={column.title}
+              status={column.id}
+              tasks={tasksByStatus(column.id)}
+              onTaskClick={handleTaskClick}
+              onDropTask={handleDropTask}
+            />
+          ))}
+        </div>
+
+        {tasks.length === 0 && !filters.priority && !filters.searchTerm && !filters.dueDate && (
+          <div className="p-8 text-center bg-white rounded-lg border border-dashed border-gray-300 mt-8">
+            <div className="text-3xl mb-3">📝</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet!</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-4">
+              Start by creating your first task. Track your assignments, projects, and study sessions.
+            </p>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create First Task
+            </Button>
+          </div>
+        )}
+
+        {/* Task Creation Dialog */}
+        <TaskDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onSubmit={handleCreateTask}
+          mode="create"
+        />
+
+        {/* Task Edit Dialog */}
+        {currentTask && (
+          <TaskDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSubmit={handleEditTask}
+            defaultValues={currentTask}
+            mode="edit"
+          />
+        )}
+
+        {/* Task Delete Confirmation */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the task "{currentTask?.title}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteTask}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
+    </DndProvider>
   );
 };
