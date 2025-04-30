@@ -1,56 +1,21 @@
-# Welcome to your Lovable project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/177bd9d6-646a-49c9-bdc3-d77a7e15983f
+## Project info: Sprint Flow Board
 
-## How can I edit this code?
+A Jira-style sprint clone board template 
 
-There are several ways of editing your application.
 
-**Use Lovable**
+Sprint Board UI: Kanban-style columns (Backlog, To Do, In Progress, Completed) with drag‑and‑drop support.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/177bd9d6-646a-49c9-bdc3-d77a7e15983f) and start prompting.
+Task Progress: Dynamic progress bar showing completed vs. total tasks.
 
-Changes made via Lovable will be committed automatically to this repo.
+Priority Visualization: Bar chart of tasks by priority (High, Medium, Low).
 
-**Use your preferred IDE**
+Search & Filter: Full-text search, priority filter, and due‑date picker.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Data Persistence: Supabase backend for real‑time storage of tasks and user sessions.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+Responsive Design: Mobile‑friendly layout powered by Tailwind CSS.
 
 This project is built with:
 
@@ -60,14 +25,39 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+![Screenshot 2025-04-29 at 9 58 30 PM](https://github.com/user-attachments/assets/3ef3740a-bd1e-4e3b-9b54-26949499c2f7)
+  
 
-Simply open [Lovable](https://lovable.dev/projects/177bd9d6-646a-49c9-bdc3-d77a7e15983f) and click on Share -> Publish.
+Prerequisites
 
-## Can I connect a custom domain to my Lovable project?
+Node.js v16.x or v18.x
 
-Yes, you can!
+npm, yarn, or pnpm
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Git for source control
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Supabase account and project credentials
+
+(Optional) Supabase CLI for local emulation
+
+Usage
+
+Create a new task: Click New Task, fill in title, description, due date, and priority.
+
+Move tasks: Drag cards between columns to update status.
+
+Search & filter: Use the search bar, priority dropdown, or date picker to narrow down tasks.
+
+View analytics: Check the progress bar and priority chart at the top.
+
+Customization
+
+Columns: Update column names or add new statuses in components/BoardColumn.tsx.
+
+Styles: Modify Tailwind classes in JSX or update tailwind.config.js.
+
+Data model: Adjust Supabase table schema (tasks table) to add fields.
+
+Charts: Customize priority chart in components/PriorityChart.tsx using Chart.js props.
+
+
